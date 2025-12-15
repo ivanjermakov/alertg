@@ -1,0 +1,14 @@
+services:
+  alertg:
+    container_name: alertg
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ALERTG_CHAT_ID=
+      - ALERTG_RECEIVER_ID=
+      - ALERTG_TOKEN=
+    ports:
+      - '3004:3000'
+    restart: unless-stopped
+
