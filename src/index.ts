@@ -37,6 +37,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse): Promise
 
     if (url.pathname === '/' && req.method === 'POST') {
         const text = new TextDecoder().decode(await body(req))
+        if (text.length === 0) throw Error('no message body')
         await sendMessage(text)
         res.statusCode = 200
         res.end()
@@ -65,9 +66,9 @@ process.on('SIGTERM', deinit)
 
 const server = createServer((req, res) => {
     handleRequest(req, res).catch(e => {
-        error('request error', e)
-        res.statusCode = 500
-        res.end('Server error')
+        error('error', e)
+        res.statusCode = 400
+        res.end(e.toString())
     })
 })
 
