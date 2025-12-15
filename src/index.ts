@@ -3,6 +3,12 @@ import TelegramBot from 'node-telegram-bot-api'
 import { exit } from 'process'
 import { debug, error, info, request, warn } from './log'
 
+const sendMessage = async (text: string): Promise<void> => {
+    if (!chatId) throw Error('misconfigured bot: chat id not known')
+    debug('sending', text)
+    await bot.sendMessage(chatId, text, { parse_mode: 'MarkdownV2' })
+}
+
 const body = (req: IncomingMessage): Promise<ArrayBuffer> => {
     return new Promise<ArrayBuffer>((resolve, reject) => {
         const chunks: Buffer[] = []
@@ -30,9 +36,8 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse): Promise
     const url = new URL(rawUrl)
 
     if (url.pathname === '/' && req.method === 'POST') {
-        if (!chatId) throw Error('misconfigured bot: chat id not known')
-        const bodyText = new TextDecoder().decode(await body(req))
-        bot.sendMessage(chatId, bodyText)
+        const text = new TextDecoder().decode(await body(req))
+        await sendMessage(text)
         res.statusCode = 200
         res.end()
         return
@@ -85,12 +90,12 @@ if (!receiverId) {
 const bot = new TelegramBot(token, { polling: true })
 let chatId = process.env.ALERTG_CHAT_ID ? Number.parseInt(process.env.ALERTG_CHAT_ID, 10) : undefined
 
-bot.on('message', msg => {
+bot.on('message', async msg => {
     debug('message', msg)
     if (msg.from?.id !== receiverId) {
         warn('unknown sender id', msg.from?.id)
         return
     }
     chatId ??= msg.chat.id
-    bot.sendMessage(chatId, `chat id: ${chatId}`)
+    await sendMessage(`chat id: ${chatId}`)
 })
